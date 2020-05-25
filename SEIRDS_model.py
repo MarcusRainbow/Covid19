@@ -55,6 +55,9 @@ class SEIRDS_Model:
         self.n = populations
         self.scale = 1.0 / populations
 
+    def infected(self):
+        return self.i
+
     def __str__(self) -> str:
         NL = "\n"
         return f"s{self.s}{NL}e{self.e}{NL}i{self.i}{NL}r{self.r}{NL}d{self.d}"
@@ -118,8 +121,14 @@ def test_one_step_identity_topography():
 
 def test_365_steps_identity_topography():
 
+    beta = 3.0 * 26.0 # infect three people in the space of two weeks
+    sigma = 52.0  # about one week to change from exposed to infected
+    gamma = 26.0  # about two weeks infected
+    digamma = 0.26  # about 1% of those infected die
+    rho = 1.0     # about one year to become susceptible again
+
     populations = np.full((3, 4), 100.0)
-    model = SEIRDS_Model(populations, 20.0, 10.0, 10.0, 1.0, 10.0)
+    model = SEIRDS_Model(populations, beta, sigma, gamma, digamma, rho)
     model.infect((0, 0))
 
     print("model before:")
@@ -134,8 +143,14 @@ def test_365_steps_identity_topography():
 
 def test_365_steps_nearest_neighbour_topography():
 
+    beta = 3.0 * 26.0 # infect three people in the space of two weeks
+    sigma = 52.0  # about one week to change from exposed to infected
+    gamma = 26.0  # about two weeks infected
+    digamma = 0.26  # about 1% of those infected die
+    rho = 1.0     # about one year to become susceptible again
+
     populations = np.full((3, 4), 100.0)
-    model = SEIRDS_Model(populations, 20.0, 10.0, 10.0, 1.0, 10.0)
+    model = SEIRDS_Model(populations, beta, sigma, gamma, digamma, rho)
     model.infect((0, 0))
 
     print("model before:")
@@ -150,9 +165,14 @@ def test_365_steps_nearest_neighbour_topography():
 
 def test_total_dead_by_beta():
 
+    sigma = 52.0  # about one week to change from exposed to infected
+    gamma = 26.0  # about two weeks infected
+    digamma = 0.26  # about 1% of those infected die
+    rho = 1.0     # about one year to become susceptible again
+
     populations = np.full((3, 4), 100.0)
-    for beta in range(5, 100, 5):
-        model = SEIRDS_Model(populations, beta, 20.0, 10.0, 1.0, 1.0)
+    for beta in range(5, 200, 5):
+        model = SEIRDS_Model(populations, beta, sigma, gamma, digamma, rho)
         model.infect((0, 0))
         topology = nearest_neighbour_topography(populations.shape, 1.0, 0.1)
         for _ in range(365 * 20):
@@ -165,6 +185,3 @@ if __name__ == "__main__":
     test_365_steps_identity_topography()
     test_365_steps_nearest_neighbour_topography()
     test_total_dead_by_beta()
-
-
-
