@@ -1,3 +1,5 @@
+import matplotlib
+# matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -6,6 +8,9 @@ from SEIR_model import SEIR_Model
 from SEIRDS_model import SEIRDS_Model
 
 def evolve(model, topography):
+
+    #Writer = animation.writers['ffmpeg']
+    #writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
     fig = plt.figure()
     plt.axis("off")
@@ -19,10 +24,10 @@ def evolve(model, topography):
         # animation
         frames.append([plt.imshow(model.infected())])
 
-    animation.ArtistAnimation(fig, frames, interval=25, blit=True,
+    a = animation.ArtistAnimation(fig, frames, interval=25, blit=True,
                                 repeat_delay=1000)
-    #a.save("SEIR.html")
-
+    #a.save('covid19.mp4', writer=writer)
+    
     plt.show()
 
 def evolve_SEIR():
@@ -45,11 +50,11 @@ def evolve_SEIRDS():
     digamma = 0.26  # about 1% of those infected die
     rho = 1.0     # about one year to become susceptible again
 
-    populations = np.full((40, 40), 100.0)
+    populations = np.full((100, 100), 100.0)
     model = SEIRDS_Model(populations, beta, sigma, gamma, digamma, rho)
     model.infect((0, 0))
 
-    topography = exponential_topography(populations.shape, 1.0, 2.0)
+    topography = exponential_topography(populations.shape, 1.0, 1.5)
     #topography = nearest_neighbour_topography(populations.shape, 1.0, 0.1)
     evolve(model, topography)
 
