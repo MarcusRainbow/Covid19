@@ -5,7 +5,7 @@ from SEIR_model import SEIR_Model
 from SEIRDS_model import SEIRDS_Model
 from math import exp, log
 
-def evolve(model, topography, has_d):
+def evolve(model, topography, has_d, tau):
 
     STEPS = 365
     timesteps = np.arange(0, STEPS, 1)
@@ -18,10 +18,7 @@ def evolve(model, topography, has_d):
     if has_d:
         D = np.zeros(STEPS)
     r_factor = np.zeros(STEPS)
-    tau = np.zeros(STEPS)
     N = np.sum(model.s)
-
-    effective_tau = 1.0 / 26.0
 
     for i, _ in enumerate(timesteps):
         model.timestep(ONE_DAY, topography)
@@ -35,19 +32,16 @@ def evolve(model, topography, has_d):
         
         if i > 0:
             effective_beta = (S[i - 1] - S[i]) * N / (S[i - 1] * I[i - 1] * ONE_DAY)
-            # if has_d:
-            #     effective_tau = (R[i] + D[i] - R[i - 1] - D[i - 1]) / I[i - 1]
-            # else:
-            #     effective_tau = (R[i] - R[i - 1]) / I[i - 1]
-            r_factor[i - 1] = effective_beta * effective_tau
-            tau[i - 1] = effective_tau
+            r_factor[i - 1] = effective_beta * tau
+
+    # fudge the last points for prettiness
+    r_factor[-1] = r_factor[-2]
 
     fig, ax = plt.subplots()
     ax.plot(timesteps, r_factor, 'b', label="R-factor")
-    ax.plot(timesteps, tau, 'g', label="tau")
 
     ax.set(xlabel='time (days)', ylabel='factors',
-        title='SEIR model')
+        title='SEIR model r factor')
     ax.grid()
     plt.legend()
     plt.show()
@@ -79,7 +73,7 @@ def evolve_SEIR():
     model.infect((0, 0))
 
     topography = nearest_neighbour_topography(populations.shape, 1.0, 0.1)
-    evolve(model, topography, False)
+    evolve(model, topography, False, 1.0 / gamma)
 
 def evolve_SEIR_stratified():
     beta = 3.0 * 26.0 # infect three people in the space of two weeks
@@ -96,7 +90,7 @@ def evolve_SEIR_stratified():
 
     #topography = stratified_topography(populations.shape, 10.0, 0.6, 0.6)
     topography = stratified_topography(populations.shape, 1.0, 0.6, 0.6)
-    evolve(model, topography, False)
+    evolve(model, topography, False, 1.0 / gamma)
 
 def evolve_SEIRDS():
 
@@ -112,7 +106,27 @@ def evolve_SEIRDS():
 
     topography = exponential_topography(populations.shape, 1.0, 1.5)
     #topography = nearest_neighbour_topography(populations.shape, 1.0, 0.1)
-    evolve(model, topography, True)
+    evolve(model, topography, True, 1.0 / gamma)
+
+
+def evolve_SEIRDS_stratified():
+    beta = 3.0 * 26.0 # infect three people in the space of two weeks
+    sigma = 52.0  # about one week to change from exposed to infected
+    gamma = 26.0  # about two weeks infected
+    digamma = 0.26  # about 1% of those infected die
+    rho = 1.0     # about one year to become susceptible again
+
+    pop_multiplier = 3000.0
+    decay = 0.05
+    populations = np.exp(np.fromfunction(lambda i, j: -decay * j, (1, 100))) * pop_multiplier
+    # populations = np.full((1, 100), 100.0)
+    print(f"{populations}")
+    model = SEIRDS_Model(populations, beta, sigma, gamma, digamma, rho)
+    model.infect((0, 0))
+
+    #topography = stratified_topography(populations.shape, 10.0, 0.6, 0.6)
+    topography = stratified_topography(populations.shape, 1.0, 0.6, 0.6)
+    evolve(model, topography, True, 1.0 / gamma)
 
 if __name__ == '__main__':
     evolve_SEIR_stratified()
