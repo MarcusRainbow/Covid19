@@ -86,6 +86,32 @@ def fast_exponential_topography(
     # Make it symmetric (we know that every value is non-negative)
     return np.maximum(result, result.transpose())
 
+def stratified_topography(
+        shape: (int, int),
+        coupling_multiplier: float,
+        distance_decay: float,
+        coupling_decay: float) -> np.ndarray:
+    """
+    Creates a matrix representing a one-dimensional topography where each point
+    affects itself and an exponentially decreasing area around. Also, the self-
+    coupling is much greater for small i:
+
+    coupling(i, j) = exp(-abs(i - j) * decay) * exp(i + j)
+    """
+    rows = shape[0]
+    cols = shape[1]
+    size = rows * cols
+    result = np.zeros((size, size))
+
+    for i in range(size):
+        for j in range(size):
+            average = (i + j) * 0.5
+            distance = abs(i - j)
+            coupling = coupling_multiplier * math.exp(-distance * distance_decay - average * coupling_decay)
+            result[i, j] = coupling
+
+    return result
+
 def test_nearest_neighbour():
     topography = nearest_neighbour_topography((4, 4), 1.0, 0.1)
     print(f"{topography}")
@@ -128,9 +154,15 @@ def test_fast_exponential():
 
     assert np.allclose(slow, topography)
 
+def test_stratified_topography():
+    topography = stratified_topography((6, 6), 1.0, 1.0, 1.0)
+    print("test_stratified_topography")
+    print(f"{topography}")
+
 if __name__ == "__main__":
     test_nearest_neighbour()
     test_exponential()
-    test_fast_exponential()
+    # test_fast_exponential()
+    test_stratified_topography()
 
 

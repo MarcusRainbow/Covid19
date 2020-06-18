@@ -1,5 +1,5 @@
 import numpy as np
-from topography import nearest_neighbour_topography
+from topography import nearest_neighbour_topography, stratified_topography
 
 class SEIR_Model:
     """
@@ -146,10 +146,31 @@ def test_365_steps_nearest_neighbour_topography():
     print("model after:")
     print(f"{model}")
 
+def test_365_steps_stratified_topography():
+
+    beta = 3.0 * 26.0 # infect three people in the space of two weeks
+    sigma = 52.0  # about one week to change from exposed to infected
+    gamma = 26.0  # about two weeks infected
+
+    populations = np.full((3, 4), 100.0)
+    model = SEIR_Model(populations, beta, sigma, gamma)
+    model.infect((0, 0))
+
+    print("model before:")
+    print(f"{model}")
+
+    topology = stratified_topography(populations.shape, 1.0, 0.1)
+    for _ in range(365):
+        model.timestep(1.0 / 365.0, topology)
+
+    print("model after:")
+    print(f"{model}")
+
 if __name__ == "__main__":
     test_one_step_identity_topography()
     test_365_steps_identity_topography()
     test_365_steps_nearest_neighbour_topography()
+    test_365_steps_stratified_topography()
 
 
 
